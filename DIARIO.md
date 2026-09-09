@@ -57,3 +57,5 @@ Criamos o notebook Colab (notebook_mortalidade.ipynb) com a documentacao complet
 Configuramos o repositorio GitHub com .gitignore (exclui data/ de 40GB e models/*.pkl), requirements.txt, README.md e DIARIO.md. O README segue o template da atividade: problema, dados, preprocessamento, modelos, resultados, o que nao funcionou, limitacoes.
 
 Decisao importante: os modelos .pkl nao podem ir pro GitHub (limite de 100 MB por arquivo). Foram disponibilizados via GitHub Releases. O notebook no Colab carrega os modelos diretamente do link de release, eliminando a necessidade de baixar arquivos grandes manualmente.
+
+Geramos a previsao de obitos mensais (1996-2025) para serie temporal. Resultado: LightGBM global com features sazonais (seno/cosseno do mes), lags e medias moveis, avaliado em 2024-2025. Ganho de 35,5% no MAE vs baseline sazonal (3.591 vs 5.568 obitos/mes), errando 2,8% do volume mensal. Grafico salvo em figuras/previsao_obitos.png.

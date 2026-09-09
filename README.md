@@ -48,6 +48,8 @@ Distribuicao do target: **50,1% evitaveis**, 49,9% nao-evitaveis.
 
 **Decisao critica**: a causa basica (CAUSABAS) **nao foi utilizada como feature**. O objetivo e prever evitabilidade a partir do perfil demografico, sem conhecer a causa da morte. Se CAUSABAS fosse incluida, a tarefa seria trivial.
 
+**Segunda tarefa (serie temporal)**: agregamos os obitos por mes e UF para os 30 anos, gerando 9.420 pontos (360 meses x 27 UFs). A serie nacional mostra sazonalidade clara e um pico de 207.106 obitos em marco de 2021, no auge da COVID-19.
+
 ## 4. Modelos testados
 
 | Modelo | Tarefa | Dataset |
@@ -57,10 +59,13 @@ Distribuicao do target: **50,1% evitaveis**, 49,9% nao-evitaveis.
 | Random Forest | Binaria (evitavel) | 2024+2025 (3M registros) |
 | Random Forest | Multiclasse (21 capitulos CID-10) | 2024 |
 | KMeans | Clustering (k=6) | 2024 (100k amostra) |
+| LightGBM | Serie temporal (obitos mensais por UF) | 1996-2025 |
 
 Hiperparametros do Random Forest final: n_estimators=200, max_depth=15, min_samples_leaf=50, class_weight='balanced'.
 
-Divisao: 80% treino, 20% teste, estratificada por target.
+Para a serie temporal, o LightGBM foi treinado como modelo global com UF como variavel categorica e features de sazonalidade (seno/cosseno do mes), tendencia, lags (1, 2, 6 e 12 meses), medias moveis (3 e 12 meses) e indicador do periodo COVID.
+
+Divisao: 80% treino, 20% teste, estratificada por target. Para a serie temporal: treino 1996-2023, teste 2024-2025 (24 meses).
 
 ## 5. Resultados
 
@@ -74,6 +79,17 @@ Divisao: 80% treino, 20% teste, estratificada por target.
 | Multiclasse (21 classes) | 16% | N/A |
 
 O modelo final (Random Forest com 3 milhoes de registros) alcanca **AUC-ROC de 0,6149**, acima da linha de base aleatoria (0,50). A accuracy de 58% e modesta, mas significativa considerando que o modelo opera sem conhecer a causa da morte.
+
+**Serie temporal** (obitos mensais por UF, previsao 2024-2025):
+
+| Modelo | MAE | RMSE |
+|--------|-----|------|
+| Baseline sazonal (mesmo mes do ano anterior) | 5.568 | 6.673 |
+| **LightGBM global (27 UFs)** | **3.591** | 4.412 |
+
+O modelo LightGBM reduziu o erro em **35,5%** frente ao baseline sazonal, com erro medio de **2,8% do volume mensal** de obitos. Na avaliacao por UF, o modelo ganhou do baseline em 25 de 27 unidades federativas.
+
+![Previsao de obitos mensais](figuras/previsao_obitos.png)
 
 **Importancia das features** (Random Forest):
 
@@ -111,6 +127,8 @@ O local do obito e a variavel mais discriminante: obitos em via publica ou resid
 **Definicao simplificada**: a lista de causas evitaveis e uma aproximacao dos criterios oficiais da OMS. A classificacao real depende de contexto clinico e epidemiologico.
 
 **Dados de 2025 preliminares**: podem sofrer revisao pelo DATASUS.
+
+**Serie temporal dependente da estabilidade historica**: a previsao de obitos assume que os padroes demograficos e epidemiologicos do passado se mantem. Eventos imprevisiveis (pandemias, desastres) nao podem ser antecipados, e o erro no agregado nacional mascara divergencias maiores em UFs individuais.
 
 ## Como reproduzir
 
