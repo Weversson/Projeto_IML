@@ -1,0 +1,62 @@
+# Dados brutos (40GB, impossivel versionar)
+data/
+*.zip
+
+# Modelos treinados (arquivos .pkl grandes)
+models/*.pkl
+models/*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+*.whl
+
+# Ambientes virtuais
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.log
+
+# Agentes IA
+AGENTS.md
+.opencode/
+.opencode.json
+.opencode.jsonc
+.claude/
+.cursor/
+.github/copilot-instructions.md
+
+# Arquivos temporarios
+*.csv
+*.parquet
+*.h5
+*.hdf5
+*.joblib
