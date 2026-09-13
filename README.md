@@ -82,7 +82,25 @@ O erro agregado nacional (3.591 obitos/mes) mascara divergencias maiores em esta
 git clone https://github.com/Weversson/Projeto_IML.git
 cd Projeto_IML
 python -m venv .venv
-.venv/bin/pip install -r requirements.txt
+
+# No Linux / macOS:
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# No Windows (Git Bash ou PowerShell):
+source .venv/Scripts/activate   # no Git Bash
+# ou: .venv\Scripts\activate     # no PowerShell/CMD
+pip install -r requirements.txt
+```
+
+Execucao de demonstracao rapida via linha de comando:
+
+```bash
+# Prever obitos para um estado e mes especificos:
+python prever.py --uf SP --ano 2024 --mes 7
+
+# Visualizar resumo de avaliacao nacional no periodo de teste:
+python prever.py --resumo
 ```
 
 Abrir `notebooks/notebook_mortalidade.ipynb` no Colab ou localmente. O notebook baixa a serie agregada e o modelo treinado diretamente do GitHub Releases:

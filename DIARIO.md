@@ -1,3 +1,4 @@
+
 # Diario de Decisoes
 
 ## 09/09
@@ -67,3 +68,15 @@ A classificacao binaria evitavel/nao-evitavel foi removida do projeto. Tentamos 
 A classificacao multiclasse (21 capitulos CID-10) se saiu pior: accuracy de 16%. Nenhum ajuste de modelo ou volume de dados mudou o resultado, confirmando que o problema era a tarefa, nao a tecnica. Decisao: abandonar a classificacao e manter apenas a serie temporal, que tem ganho de 35,5% sobre o baseline e faz sentido na pratica.
 
 Tambem removemos do release os arquivos relacionados (modelo Random Forest de 170 MB, clustering e scaler).
+
+## 13/09
+
+**Auditoria de reprodutibilidade e preparacao do seminario**
+
+Revisamos os requisitos formais de entrega do seminario (reprodutibilidade, documentacao e apresentacao em 15 minutos com o repositorio na tela).
+
+Identificamos e corrigimos dois pontos criticos de reprodutibilidade:
+1. O arquivo `requirements.txt` nao continha a biblioteca `lightgbm`, necessaria para desserializar e inferir com o modelo final salvo em `.pkl`. Dependencia adicionada com versao fixada (`lightgbm>=4.0`).
+2. As instrucoes de criacao e ativacao da virtualenv no `README.md` consideravam apenas o padrao Unix (`.venv/bin/pip`), falhando no Windows (`.venv\Scripts\activate` ou `source .venv/Scripts/activate` no Git Bash). Atualizamos a documentacao com suporte explicito para ambos os ambientes.
+
+Criamos o script CLI `prever.py` na raiz do repositorio para permitir demonstracao rapida e interativa durante a apresentacao. O script automatiza o download do modelo caso nao esteja presente, carrega a serie agregada, monta as 13 features exatamente como no treinamento e calcula na hora a predicao do LightGBM contra o baseline sazonal, exibindo o ganho percentual no terminal.
