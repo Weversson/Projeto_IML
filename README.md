@@ -37,16 +37,19 @@ Baselines: prever cada mes como o mesmo mes do ano anterior (sazonal ingenuo) e 
 
 ## 4. Modelos testados
 
-| Modelo | Descricao |
-|--------|-----------|
-| Baseline sazonal | Repete o valor do mesmo mes do ano anterior |
-| Baseline mes anterior | Repete o valor do mes anterior |
-| Modelo de serie nacional unica | Um modelo para a serie agregada do Brasil; ficou pior que o baseline (secao 6) |
-| **LightGBM global** | Um unico modelo para as 27 UFs, com a UF como codigo numerico do IBGE (modelo final) |
+Modelos testados em ordem cronológica ao longo do desenvolvimento do projeto, com o que foi tentado e o motivo da falha (ou sucesso):
 
-Hiperparametros: n_estimators=800, learning_rate=0.05, num_leaves=127, max_depth=10, min_child_samples=30, subsample=0.8, colsample_bytree=0.7, random_state=42. O `subsample=0.8` nao tem efeito na pratica: o LightGBM so sorteia linhas quando `subsample_freq` e maior que 0, e ele ficou no padrao (0).
+| Ordem | Modelo | Descrição | Por que deu errado / Resultado |
+|---|---|---|---|
+| **1º** | **K-Means (Clustering)** | Agrupamento não supervisionado dos microdados em 6 clusters por perfil demográfico (idade, sexo, raça, escolaridade). | **Por que deu errado:** Não resolvia uma tarefa preditiva acionável. Apenas descreveu dados óbvios (ex: jovens morrem mais de causas externas), sem utilidade prática para planejamento. |
+| **2º** | **Random Forest e Gradient Boosting** | Classificação binária para prever se o óbito era evitável ou não a partir do perfil demográfico, sem usar a causa da morte para não trapacear. | **Por que deu errado:** Teto nas features. Parou em AUC de 0,61 e acurácia de 58% (mesmo com 3 milhões de dados). Perfil demográfico isolado não explica se o óbito era evitável sem exame clínico. |
+| **3º** | **Classificador Multiclasse** | Tentativa de prever qual das 21 categorias de doenças da CID-10 causou a morte a partir dos dados demográficos. | **Por que deu errado:** Acurácia de apenas 16%. Ausência de correlação demográfica suficiente para adivinhar a patologia específica. |
+| **4º** | **Série Temporal Nacional Única** | Regressão temporal agregando todos os óbitos do Brasil em uma linha do tempo única nacional (324 meses). | **Por que deu errado:** Pior que a linha de base ingênua (MAE de 6.140 vs 5.568 do baseline sazonal). Ignorava as dinâmicas regionais e tinha pouca massa de dados de treino. |
+| **5º** | **LightGBM Global por UF** *(Final)* | Gradient Boosted Trees treinado com as 27 UFs simultaneamente (9.420 pontos), com a UF como código numérico do IBGE e 13 features temporais/sazonais. | **Deu certo:** MAE de 3.591 óbitos/mês (**redução de 35,5% do erro** frente ao baseline sazonal e **37,4%** frente ao mês anterior), errando apenas 2,8% do volume mensal. |
 
-Divisao temporal, sem embaralhamento: treino de jan/1997 a dez/2023 (8.448 linhas) e teste de jan/2024 a dez/2025 (648 linhas, 24 meses x 27 UFs). O ano de 1996 entra apenas no calculo dos lags.
+### Configuração do Modelo Final (LightGBM Global)
+- **Hiperparâmetros:** `n_estimators=800`, `learning_rate=0.05`, `num_leaves=127`, `max_depth=10`, `min_child_samples=30`, `subsample=0.8`, `colsample_bytree=0.7`, `random_state=42`. O `subsample=0.8` não tem efeito na prática: o LightGBM só sorteia linhas quando `subsample_freq` é maior que 0, e ele ficou no padrão (0).
+- **Divisão temporal, sem embaralhamento:** Treino de jan/1997 a dez/2023 (8.448 linhas) e teste de jan/2024 a dez/2025 (648 linhas, 24 meses x 27 UFs). O ano de 1996 entra apenas no cálculo dos lags.
 
 ## 5. Resultados
 
