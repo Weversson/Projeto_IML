@@ -100,3 +100,13 @@ Adicionamos no notebook, depois do grafico real vs previsao, uma celula que trei
 - Testamos tambem outra linha de base, repetir o mes anterior: MAE de 5.738. O modelo vence as duas linhas de base.
 
 Proximo passo: descobrir por que 2012 se perdeu e combinar com o grupo antes de corrigir, porque os numeros do README vao mudar.
+
+**Correcoes da revisao**
+
+Com a celula de treino pronta, corrigimos os pontos da revisao que nao mudam o modelo nem os dados. No README, trocamos "25 das 27 UFs" por 18 das 27, listando as 9 em que o modelo perde, registramos que o `subsample` nao tem efeito e acrescentamos 2012 nas limitacoes. No README e no notebook, corrigimos a descricao da UF (codigo numerico do IBGE, nao categorica) e explicamos por que a serie tem 9.420 linhas e nao 9.720. A tabela de modelos testados passou a incluir as duas linhas de base e o modelo de serie nacional unica. Tambem tiramos o `seaborn` do `requirements.txt`, que nenhum arquivo usava.
+
+Para esses numeros nao ficarem so no texto, adicionamos no notebook a celula "Comparacao detalhada", com as duas linhas de base, o MAE por UF e a importancia das features, usando as previsoes ja feitas, sem treinar de novo. O `LAG_1` responde por 68,9% do gain do modelo e, somado as medias moveis de 3 e 12 meses, passa de 95%. Na pratica, o modelo funciona como uma persistencia ajustada pelas medias recentes.
+
+Na secao 4 do notebook, recolocamos as aspas que tinham sumido no codigo comentado de reconstrucao da serie, conferindo o download com a versao do primeiro commit. No `prever.py`, incluimos um aviso quando a data pedida esta no periodo de treino e uma mensagem para 2012.
+
+Duvida: corrigir 2012 antes da apresentacao, mesmo mudando os numeros do README, ou apresentar como limitacao? Precisamos decidir com o grupo.
