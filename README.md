@@ -18,9 +18,9 @@ Periodo: **1996 a 2025** (30 anos), obtidos em JSON diretamente do S3 oficial do
 
 Para este trabalho, os obitos foram agregados em **series mensais por unidade federativa**:
 
-- 9.420 pontos (360 meses x 27 UFs)
+- 9.420 pontos (27 UFs x 360 meses dariam 9.720; faltam os 12 meses de 2012 em 25 UFs, ver secao 7)
 - Series nacional: pico de **207.106 obitos em marco de 2021** (auge da COVID-19)
-- Media de ~96.700 obitos por mes no periodo
+- Media de ~96.700 obitos por mes no periodo (~99.500 sem contar 2012, que esta incompleto)
 
 ## 3. Preprocessamento
 
@@ -33,26 +33,30 @@ Extracao e concatenacao dos ZIPs (particoes por ano), seguida da agregacao por (
 - COVID: indicador do periodo de pandemia (mar/2020 a dez/2022)
 - POS: indicador do periodo pos-pandemia (2023 em diante)
 
-Baseline: prever cada mes como o mesmo mes do ano anterior (sazonal ingenuo).
+Baselines: prever cada mes como o mesmo mes do ano anterior (sazonal ingenuo) e repetir o valor do mes anterior (ingenuo), que usa a mesma informacao do LAG_1.
 
 ## 4. Modelos testados
 
 | Modelo | Descricao |
 |--------|-----------|
-| LightGBM global | Um unico modelo para as 27 UFs, com UF como variavel categorica |
+| Baseline sazonal | Repete o valor do mesmo mes do ano anterior |
+| Baseline mes anterior | Repete o valor do mes anterior |
+| Modelo de serie nacional unica | Um modelo para a serie agregada do Brasil; ficou pior que o baseline (secao 6) |
+| **LightGBM global** | Um unico modelo para as 27 UFs, com a UF como codigo numerico do IBGE (modelo final) |
 
-Hiperparametros: n_estimators=800, learning_rate=0.05, num_leaves=127, max_depth=10, min_child_samples=30, subsample=0.8, colsample_bytree=0.7.
+Hiperparametros: n_estimators=800, learning_rate=0.05, num_leaves=127, max_depth=10, min_child_samples=30, subsample=0.8, colsample_bytree=0.7, random_state=42. O `subsample=0.8` nao tem efeito na pratica: o LightGBM so sorteia linhas quando `subsample_freq` e maior que 0, e ele ficou no padrao (0).
 
-Divisao temporal: treino 1996-2023 (324 meses), teste 2024-2025 (24 meses), sem embaralhamento.
+Divisao temporal, sem embaralhamento: treino de jan/1997 a dez/2023 (8.448 linhas) e teste de jan/2024 a dez/2025 (648 linhas, 24 meses x 27 UFs). O ano de 1996 entra apenas no calculo dos lags.
 
 ## 5. Resultados
 
 | Modelo | MAE | RMSE |
 |--------|-----|------|
 | Baseline sazonal | 5.568 | 6.673 |
+| Baseline mes anterior | 5.738 | 7.720 |
 | **LightGBM global** | **3.591** | 4.412 |
 
-O modelo reduziu o MAE em **35,5%** frente ao baseline, com erro medio de **2,8% do volume mensal** de obitos. Venceu o baseline em 25 das 27 UFs.
+O modelo reduziu o MAE em **35,5%** frente ao baseline sazonal e em **37,4%** frente ao baseline do mes anterior, com erro medio de **2,8% do volume mensal** de obitos. Essas metricas sao calculadas na serie nacional (soma das previsoes das 27 UFs em cada mes do teste). Por UF, o modelo venceu o baseline sazonal em **18 das 27 UFs** e perdeu em MG, MT, AM, MS, SE, RO, AC, AP e RR (detalhes na secao 3 do notebook).
 
 ![Previsao de obitos mensais](figuras/previsao_obitos.png)
 
@@ -74,7 +78,9 @@ O modelo assume que os padroes demograficos e epidemiologicos do passado se mant
 
 Os dados de 2025 ainda sao preliminares e podem ser revisados pelo DATASUS.
 
-O erro agregado nacional (3.591 obitos/mes) mascara divergencias maiores em estados com volume pequeno de obitos.
+O erro agregado nacional (3.591 obitos/mes) mascara divergencias maiores em estados com volume pequeno de obitos. Na soma nacional, erros de sinais opostos entre UFs se compensam: somando o MAE de cada UF, o erro chega a 6.090 obitos/mes. Em RR, o erro medio e de 15,6% do volume mensal, e o modelo perde para o baseline sazonal em 9 UFs.
+
+A serie agregada nao tem 2012 para 25 das 27 UFs (apenas SP e TO). O arquivo de 2012 existe no DATASUS, entao a falha ocorreu no processamento. Nessas UFs, os lags de 2013 ficam deslocados (o mes anterior de jan/2013 vira dez/2011), o que afeta o treino, mas nao diretamente o periodo de teste.
 
 ## Como reproduzir
 
@@ -107,15 +113,19 @@ Abrir `notebooks/notebook_mortalidade.ipynb` no Colab ou localmente. O notebook 
 
 https://github.com/Weversson/Projeto_IML/releases
 
-Uso do modelo em outro ambiente:
+Na secao 3 do notebook, a celula "Treinamento do modelo" treina o LightGBM de novo e confirma que as previsoes sao identicas as do modelo publicado (recomendamos rodar no Colab). A celula seguinte, "Comparacao detalhada", calcula as duas linhas de base, o erro por UF e a importancia das features.
+
+Uso do modelo em outro ambiente (a partir da raiz do repositorio, reaproveitando as funcoes do `prever.py`):
 
 ```python
 import joblib
-import pandas as pd
+from prever import garantir_arquivos, preparar_features
 
-lgbm = joblib.load('models/previsao_obitos_uf_lgbm.pkl')
+modelo_path, csv_path = garantir_arquivos()  # baixa o modelo e a serie, se faltarem
+modelo = joblib.load(modelo_path)
+df = preparar_features(csv_path)  # monta as 13 features como no treino
 
-# Construir as features na ordem exata do treinamento:
-# UF, SENO, COS, TEND, COVID, POS, LAG_1, LAG_2, LAG_6, LAG_12, ROLL_3, ROLL_12, MES
-# O detalhamento esta no notebook, secao 3.
+fc = ['UF', 'SENO', 'COS', 'TEND', 'COVID', 'POS', 'LAG_1', 'LAG_2', 'LAG_6', 'LAG_12', 'ROLL_3', 'ROLL_12', 'MES']
+df['PREV'] = modelo.predict(df[fc])
+print(df[['ANO', 'MES', 'UF', 'OBITOS', 'PREV']].tail())
 ```
