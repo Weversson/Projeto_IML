@@ -24,14 +24,18 @@ Para este trabalho, os obitos foram agregados em **series mensais por unidade fe
 
 ## 3. Preprocessamento
 
-Extracao e concatenacao dos ZIPs (particoes por ano), seguida da agregacao por (ano, mes, UF). Para cada linha (mes-UF) foram derivadas features:
+Extracao e concatenacao dos ZIPs (particoes por ano), seguida da agregacao por (ano, mes, UF). A matriz de entrada do modelo e composta por **13 features**:
 
-- SENO/COS: posicao do mes no ciclo anual (sazonalidade)
-- TEND: indice temporal por UF (tendencia)
-- LAG_1, LAG_2, LAG_6, LAG_12: obitos de 1, 2, 6 e 12 meses atras
-- ROLL_3, ROLL_12: medias moveis de 3 e 12 meses
-- COVID: indicador do periodo de pandemia (mar/2020 a dez/2022)
-- POS: indicador do periodo pos-pandemia (2023 em diante)
+- **UF**: codigo numerico do IBGE da unidade federativa
+- **MES**: mes do obito (1 a 12)
+- **SENO / COS**: transformacao trigonometrica da posicao do mes no ciclo anual (sazonalidade continua)
+- **TEND**: indice temporal cumulativo por UF (tendencia de longo prazo)
+- **LAG_1, LAG_2, LAG_6, LAG_12**: volume de obitos de 1, 2, 6 e 12 meses atras (memoria e inercia)
+- **ROLL_3, ROLL_12**: medias moveis dos ultimos 3 e 12 meses (suavizacao de ruido)
+- **COVID**: dummy de intervencao para o pico da pandemia (mar/2020 a dez/2022)
+- **POS**: dummy para o regime pos-pandemia (2023 em diante)
+
+Todas as variaveis temporais (lags e medias moveis) foram defasadas com `.shift(1)` para impedir vazamento de dados (*data leakage*). Linhas sem historico completo (ano de 1996) foram removidas via `dropna`.
 
 Baselines: prever cada mes como o mesmo mes do ano anterior (sazonal ingenuo) e repetir o valor do mes anterior (ingenuo), que usa a mesma informacao do LAG_1.
 
