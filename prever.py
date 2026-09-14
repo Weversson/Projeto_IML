@@ -119,7 +119,9 @@ def prever_ponto(model, df, uf_cod, uf_sigla, ano, mes):
 
     if subset.empty:
         print(f"\n[!] Data {mes:02d}/{ano} nao encontrada na serie historica para {uf_sigla}.")
-        print("    O periodo disponivel para teste vai de 1997 ate 2025.")
+        if ano == 2012:
+            print("    A serie agregada nao tem 2012 para 25 UFs (apenas SP e TO). Ver Limitacoes no README.")
+        print("    A serie com features vai de 1997 ate 2025; o periodo de teste do modelo e 2024-2025.")
         return
 
     row = subset.iloc[0]
@@ -138,6 +140,10 @@ def prever_ponto(model, df, uf_cod, uf_sigla, ano, mes):
     print("\n" + "=" * 60)
     print(f" PREVISAO DE OBITOS - {nome} ({uf_sigla}) - {mes:02d}/{ano}")
     print("=" * 60)
+    if data_alvo < pd.Timestamp('2024-01-01'):
+        print(" [AVISO] Este mes faz parte do treino (1997-2023): o modelo ja viu esse valor,")
+        print("         entao o erro abaixo nao vale como avaliacao. Use 2024 ou 2025.")
+        print("-" * 60)
     print(f" * Obitos Reais Registrados:        {int(real):>10,}".replace(',', '.'))
     print(f" * Previsao LightGBM:               {int(round(pred)):>10,}".replace(',', '.'))
     print(f"   -> Erro Absoluto do Modelo:      {int(round(erro_lgbm)):>10,} ({pct_lgbm:.2f}%)".replace(',', '.'))

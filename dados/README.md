@@ -22,7 +22,7 @@ Devido ao tamanho de 40 GB, esses arquivos brutos nao sao versionados diretament
 Para a modelagem preditiva por series temporais, os registros individuais foram agregados pelo trio `(ANO, MES, UF)` contando a quantidade de obitos.
 
 * **Arquivo:** `serie_obitos_uf.csv`
-* **Dimensoes:** 9.420 linhas (360 meses x 27 Unidades Federativas).
+* **Dimensoes:** 9.420 linhas. Com 360 meses x 27 Unidades Federativas seriam 9.720, mas faltam os 12 meses de 2012 em 25 UFs (apenas SP e TO tem 2012).
 * **Tamanho:** ~141 KB.
 * **Download direto:** [GitHub Releases v1.0 - serie_obitos_uf.csv](https://github.com/Weversson/Projeto_IML/releases/download/v1.0/serie_obitos_uf.csv)
 
