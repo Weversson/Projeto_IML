@@ -80,3 +80,23 @@ Identificamos e corrigimos dois pontos criticos de reprodutibilidade:
 2. As instrucoes de criacao e ativacao da virtualenv no `README.md` consideravam apenas o padrao Unix (`.venv/bin/pip`), falhando no Windows (`.venv\Scripts\activate` ou `source .venv/Scripts/activate` no Git Bash). Atualizamos a documentacao com suporte explicito para ambos os ambientes.
 
 Criamos o script CLI `prever.py` na raiz do repositorio para permitir demonstracao rapida e interativa durante a apresentacao. O script automatiza o download do modelo caso nao esteja presente, carrega a serie agregada, monta as 13 features exatamente como no treinamento e calcula na hora a predicao do LightGBM contra o baseline sazonal, exibindo o ganho percentual no terminal.
+
+## 14/09
+
+**Codigo de treino no notebook**
+
+Revisamos o repositorio com foco na reprodutibilidade. O modelo foi treinado no Colab, mas o codigo de treino nao estava no repositorio: o notebook e o `prever.py` apenas baixam o `.pkl` pronto do Release v1.0 e fazem a previsao. Assim, ninguem conseguia gerar o modelo de novo, so avaliar o que ja estava pronto.
+
+Duvida na epoca: treinar de novo com os parametros do README geraria exatamente o mesmo modelo do Release? Retreinamos com os meses ate dez/2023, UF como codigo numerico do IBGE e `random_state=42` (a semente registrada no `.pkl`), e comparamos com o modelo publicado. As previsoes ficaram identicas nas 9.096 linhas, com diferenca maxima de 0,0, as mesmas 800 arvores e os mesmos parametros. A unica diferenca foi de arredondamento, na casa de 1e-16, em alguns limiares das arvores, sem efeito nas previsoes.
+
+Adicionamos no notebook, depois do grafico real vs previsao, uma celula que treina o modelo e compara com o do Release. O modelo novo e salvo como `previsao_obitos_uf_lgbm_treinado.pkl`, para nao sobrescrever o arquivo baixado. Rodamos no Colab: 8.448 linhas de treino (01/1997 a 12/2023), 648 de teste (01/2024 a 12/2025), previsoes identicas ao Release e MAE de 3.591 obitos/mes. O treino comeca em 1997 porque o primeiro ano de cada UF nao tem `LAG_12` e sai no `dropna`.
+
+**Problemas encontrados na revisao**
+
+- A serie agregada tem 9.420 linhas, e nao 9.720 (360 meses x 27 UFs). Falta o ano de 2012 inteiro em 25 UFs, so SP e TO tem dados. O ZIP de 2012 existe no DATASUS, entao a falha esta no nosso processamento.
+- O README diz que o modelo venceu o baseline em 25 das 27 UFs. Na conferencia, comparando o MAE de cada UF nos 24 meses de teste, foram 18.
+- A celula 6 do notebook e o README dizem que a UF entra como variavel categorica, mas o modelo usa o codigo numerico.
+- O `subsample=0.8` nao tem efeito, porque o `subsample_freq` ficou em 0.
+- Testamos tambem outra linha de base, repetir o mes anterior: MAE de 5.738. O modelo vence as duas linhas de base.
+
+Proximo passo: descobrir por que 2012 se perdeu e combinar com o grupo antes de corrigir, porque os numeros do README vao mudar.
